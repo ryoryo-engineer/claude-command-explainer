@@ -51,6 +51,40 @@ test('アスタリスク区切り（*****）が見出し前後にある', () => 
   assert.ok(out.includes('***************'));
 });
 
+test('ヘッダーとフッターの見た目の幅が同じになる（日本語は2倍幅で計算）', () => {
+  const out = format({ description: 'テスト', danger: { level: 'safe' } });
+  const lines = out.split('\n');
+  const headerLine = lines.find(l => l.includes('実行しようとしていること'));
+  const footerLine = lines.reverse().find(l => /^\*+$/.test(l));
+
+  // 表示幅計算（formatter.js の displayWidth と同じロジック）
+  function w(s) {
+    let n = 0;
+    for (const ch of s) {
+      const cp = ch.codePointAt(0);
+      if (cp === undefined) continue;
+      if (cp >= 0x1F000) { n += 2; continue; }
+      if (
+        (cp >= 0x1100 && cp <= 0x115F) ||
+        (cp >= 0x2E80 && cp <= 0x303E) ||
+        (cp >= 0x3041 && cp <= 0x33FF) ||
+        (cp >= 0x3400 && cp <= 0x4DBF) ||
+        (cp >= 0x4E00 && cp <= 0x9FFF) ||
+        (cp >= 0xA000 && cp <= 0xA4CF) ||
+        (cp >= 0xAC00 && cp <= 0xD7A3) ||
+        (cp >= 0xF900 && cp <= 0xFAFF) ||
+        (cp >= 0xFE30 && cp <= 0xFE4F) ||
+        (cp >= 0xFF00 && cp <= 0xFF60) ||
+        (cp >= 0xFFE0 && cp <= 0xFFE6)
+      ) { n += 2; } else { n += 1; }
+    }
+    return n;
+  }
+  // ANSI コードを除去してから幅を測る（CCE_NO_COLOR=1 設定だけど念のため）
+  const strip = (s) => s.replace(/\x1b\[[0-9;]*m/g, '');
+  assert.strictEqual(w(strip(headerLine)), w(strip(footerLine)));
+});
+
 test('先頭と末尾は空行になる（視覚的余白）', () => {
   const out = format({ description: 'テスト', danger: { level: 'safe' } });
   const lines = out.split('\n');
