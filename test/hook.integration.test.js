@@ -66,14 +66,57 @@ test('hookEventName は PreToolUse である', async () => {
   assert.strictEqual(parsed.hookSpecificOutput.hookEventName, 'PreToolUse');
 });
 
-test('permissionDecision は出力しない（既存の許可フローに従う）', async () => {
+test('default モードでは permissionDecision: ask を出力する（許可ダイアログに日本語説明を出すため）', async () => {
+  fs.rmSync(TMP_CACHE, { force: true });
+  const { out } = await runHook({
+    tool_name: 'Bash',
+    tool_input: { command: 'ls' },
+    permission_mode: 'default',
+  });
+  const parsed = parseHookOutput(out);
+  assert.strictEqual(parsed.hookSpecificOutput.permissionDecision, 'ask');
+});
+
+test('permission_mode が省略されたときも ask を出力する（default 扱い）', async () => {
   fs.rmSync(TMP_CACHE, { force: true });
   const { out } = await runHook({
     tool_name: 'Bash',
     tool_input: { command: 'ls' },
   });
   const parsed = parseHookOutput(out);
-  // permissionDecision を出すと既存の許可ルールを上書きしてしまうので、出さない
+  assert.strictEqual(parsed.hookSpecificOutput.permissionDecision, 'ask');
+});
+
+test('acceptEdits モードでは permissionDecision を出力しない（自動承認モードを邪魔しないため）', async () => {
+  fs.rmSync(TMP_CACHE, { force: true });
+  const { out } = await runHook({
+    tool_name: 'Bash',
+    tool_input: { command: 'ls' },
+    permission_mode: 'acceptEdits',
+  });
+  const parsed = parseHookOutput(out);
+  assert.strictEqual(parsed.hookSpecificOutput.permissionDecision, undefined);
+});
+
+test('acceptAll モードでも permissionDecision を出力しない', async () => {
+  fs.rmSync(TMP_CACHE, { force: true });
+  const { out } = await runHook({
+    tool_name: 'Bash',
+    tool_input: { command: 'ls' },
+    permission_mode: 'acceptAll',
+  });
+  const parsed = parseHookOutput(out);
+  assert.strictEqual(parsed.hookSpecificOutput.permissionDecision, undefined);
+});
+
+test('bypassPermissions モードでも permissionDecision を出力しない', async () => {
+  fs.rmSync(TMP_CACHE, { force: true });
+  const { out } = await runHook({
+    tool_name: 'Bash',
+    tool_input: { command: 'ls' },
+    permission_mode: 'bypassPermissions',
+  });
+  const parsed = parseHookOutput(out);
   assert.strictEqual(parsed.hookSpecificOutput.permissionDecision, undefined);
 });
 

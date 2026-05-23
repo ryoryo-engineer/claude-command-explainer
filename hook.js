@@ -122,16 +122,30 @@ async function main() {
     const formatted = format({ description, danger });
 
     // Claude Code に対して JSON を返す
-    //   - permissionDecisionReason: ユーザーが許可ダイアログを見るときに表示される
+    //   - permissionDecision: 'ask' → Claude Code に「許可ダイアログを reason 付きで出して」と指示
+    //   - permissionDecisionReason: 許可ダイアログに表示される日本語説明
     //   - additionalContext: Claude に渡される（モデルが文脈を理解するのに役立つ）
     //   - systemMessage: ユーザーへの通知としてチャット領域に表示される
-    // permissionDecision は省略 → 既存の許可フロー（matcher の allow/ask/deny ルール）に従う
+    //
+    // permission_mode が acceptAll/acceptEdits/bypassPermissions のときは
+    // ユーザーが既に「自動承認モード」を選んでいるので ask を返さない（邪魔しない）。
+    // それ以外（default/plan/ask）では ask を返して許可ダイアログに日本語を出す。
+    const permissionMode = data.permission_mode || 'default';
+    const skipAsk = (
+      permissionMode === 'acceptAll' ||
+      permissionMode === 'acceptEdits' ||
+      permissionMode === 'bypassPermissions'
+    );
+    const hookSpecificOutput = {
+      hookEventName: 'PreToolUse',
+      permissionDecisionReason: formatted,
+      additionalContext: `日本語説明: ${description}\n危険度: ${danger.level}`,
+    };
+    if (!skipAsk) {
+      hookSpecificOutput.permissionDecision = 'ask';
+    }
     const hookOutput = {
-      hookSpecificOutput: {
-        hookEventName: 'PreToolUse',
-        permissionDecisionReason: formatted,
-        additionalContext: `日本語説明: ${description}\n危険度: ${danger.level}`,
-      },
+      hookSpecificOutput,
       systemMessage: formatted,
     };
 
