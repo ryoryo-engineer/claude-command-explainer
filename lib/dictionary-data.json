@@ -1,0 +1,40 @@
+{
+  "bash": {
+    "patterns": [
+      { "regex": "^\\s*rm\\s+-rf?\\s+(.+)$", "template": "📁 `{1}` を完全に削除しようとしています", "matched": true },
+      { "regex": "^\\s*rm\\s+(.+)$", "template": "🗑️ `{1}` を削除しようとしています", "matched": true },
+      { "regex": "^\\s*cd\\s+(.+)$", "template": "📂 `{1}` フォルダに移動しようとしています", "matched": true },
+      { "regex": "^\\s*pwd\\s*$", "template": "現在のフォルダのパスを表示しようとしています", "matched": true },
+      { "regex": "^\\s*ls(\\s+.+)?$", "template": "📋 フォルダ内のファイル一覧を表示しようとしています", "matched": true },
+      { "regex": "^\\s*cat\\s+(.+)$", "template": "👁️ `{1}` の中身を表示しようとしています", "matched": true },
+      { "regex": "^\\s*mkdir\\s+(?:-p\\s+)?(.+)$", "template": "📂 `{1}` フォルダを作成しようとしています", "matched": true },
+      { "regex": "^\\s*mv\\s+(\\S+)\\s+(\\S+)\\s*$", "template": "✂️ `{1}` を `{2}` に移動/改名しようとしています", "matched": true },
+      { "regex": "^\\s*cp\\s+(?:-r\\s+)?(\\S+)\\s+(\\S+)\\s*$", "template": "📋 `{1}` を `{2}` にコピーしようとしています", "matched": true },
+      { "regex": "^\\s*git\\s+status\\b", "template": "📊 Git の変更状況を確認しようとしています", "matched": true },
+      { "regex": "^\\s*git\\s+add\\s+(.+)$", "template": "➕ `{1}` を Git の次回コミット対象に追加しようとしています", "matched": true },
+      { "regex": "^\\s*git\\s+commit\\b", "template": "💾 Git で現在の変更をコミットしようとしています", "matched": true },
+      { "regex": "^\\s*git\\s+push\\s+(?:--force\\s+|--force-with-lease\\s+|-f\\s+)?(\\S+)\\s+(\\S+)", "template": "📤 `{1}` の `{2}` ブランチにプッシュしようとしています", "matched": true },
+      { "regex": "^\\s*git\\s+push\\b", "template": "📤 Git のリモートリポジトリにプッシュしようとしています", "matched": true },
+      { "regex": "^\\s*git\\s+pull\\b", "template": "📥 Git のリモートから最新の変更を取得しようとしています", "matched": true },
+      { "regex": "^\\s*git\\s+checkout\\s+(\\S+)", "template": "🔀 Git で `{1}` ブランチに切り替えようとしています", "matched": true },
+      { "regex": "^\\s*git\\s+branch\\b", "template": "🌿 Git のブランチを操作しようとしています", "matched": true },
+      { "regex": "^\\s*git\\s+log\\b", "template": "📜 Git のコミット履歴を表示しようとしています", "matched": true },
+      { "regex": "^\\s*git\\s+diff\\b", "template": "🔍 Git の変更差分を表示しようとしています", "matched": true },
+      { "regex": "^\\s*npm\\s+install(\\s+.+)?$", "template": "📦 npm でパッケージをインストールしようとしています", "matched": true },
+      { "regex": "^\\s*npm\\s+run\\s+(\\S+)", "template": "▶️ npm スクリプト `{1}` を実行しようとしています", "matched": true },
+      { "regex": "^\\s*npm\\s+test\\b", "template": "🧪 npm のテストを実行しようとしています", "matched": true },
+      { "regex": "^\\s*node\\s+(.+)$", "template": "▶️ Node.js で `{1}` を実行しようとしています", "matched": true },
+      { "regex": "^\\s*echo\\b", "template": "💬 テキストを画面に出力しようとしています", "matched": true },
+      { "regex": "^\\s*touch\\s+(.+)$", "template": "📄 `{1}` ファイルを作成しようとしています", "matched": true },
+      { "regex": "^\\s*which\\s+(\\S+)", "template": "🔎 `{1}` コマンドの場所を確認しようとしています", "matched": true },
+      { "regex": "^\\s*where\\s+(\\S+)", "template": "🔎 `{1}` コマンドの場所を確認しようとしています", "matched": true }
+    ]
+  },
+  "edit": { "template": "✏️ `{file_path}` を編集しようとしています", "matched": true },
+  "write": { "template": "📝 `{file_path}` を新規作成または上書きしようとしています", "matched": true },
+  "read": { "template": "👁️ `{file_path}` を読み取ろうとしています", "matched": true },
+  "glob": { "template": "🔎 `{pattern}` パターンに合うファイルを検索しようとしています", "matched": true },
+  "grep": { "template": "🔍 `{pattern}` というキーワードでファイルを検索しようとしています", "matched": true },
+  "bashoutput": { "template": "📊 バックグラウンドで動いているコマンドの出力を確認しようとしています", "matched": true },
+  "killbash": { "template": "⏹️ バックグラウンドで動いているコマンドを停止しようとしています", "matched": true }
+}
