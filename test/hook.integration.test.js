@@ -15,7 +15,7 @@ const NODE_EXE = process.execPath;
 function runHook(input) {
   return new Promise((resolve) => {
     const child = spawn(NODE_EXE, [HOOK], {
-      env: { ...process.env, CCE_CACHE_PATH: TMP_CACHE, PATH: '' }, // PATH 空にして claude を呼ばせない
+      env: { ...process.env, CCE_CACHE_PATH: TMP_CACHE, CCE_DEBUG_LOG: 'off', PATH: '' }, // PATH 空にして claude を呼ばせない
     });
     let out = '', err = '';
     child.stdout.on('data', (c) => (out += c));

@@ -6,12 +6,38 @@
 //   - systemMessage: ユーザーへのフォールバック通知
 // 既存の許可フローを邪魔しないため permissionDecision は出力しない。
 
+const fs = require('node:fs');
+const path = require('node:path');
+const os = require('node:os');
 const { readStdin } = require('./lib/io');
 const { explain } = require('./lib/dictionary');
 const { askLlm } = require('./lib/claude-llm');
 const { get: cacheGet, set: cacheSet } = require('./lib/cache');
 const { getDanger } = require('./lib/danger');
 const { format } = require('./lib/formatter');
+
+/**
+ * デバッグログをファイルに追記する
+ * - 環境変数 CCE_DEBUG_LOG=off で無効化
+ * - 環境変数 CCE_DEBUG_LOG=<path> で出力先を指定
+ * - 未指定なら ~/.claude/command-explainer-debug.log に出力（デバッグ期間のデフォルト）
+ * @param {string} label
+ * @param {any} payload
+ */
+function debugLog(label, payload) {
+  const envVar = process.env.CCE_DEBUG_LOG;
+  if (envVar === 'off') return;
+  const logPath = envVar || path.join(os.homedir(), '.claude', 'command-explainer-debug.log');
+  try {
+    const line = `[${new Date().toISOString()}] ${label}: ${
+      typeof payload === 'string' ? payload : JSON.stringify(payload)
+    }\n`;
+    fs.mkdirSync(path.dirname(logPath), { recursive: true });
+    fs.appendFileSync(logPath, line);
+  } catch {
+    // ログ書き込み失敗は無視
+  }
+}
 
 /**
  * タイムアウト設定を環境変数から読み込む
@@ -55,20 +81,25 @@ function exitQuietly() {
 }
 
 async function main() {
+  debugLog('START', { pid: process.pid, argv: process.argv });
   try {
     // stdin から JSON を読み込む
     const raw = await readStdin();
+    debugLog('STDIN_RAW', raw);
 
     // JSON パース失敗は静かに exit 0
     let data;
     try {
       data = JSON.parse(raw);
-    } catch {
+    } catch (e) {
+      debugLog('JSON_PARSE_ERROR', String(e));
       return exitQuietly();
     }
+    debugLog('PARSED', data);
 
     // 不正なデータは静かに exit 0
     if (!data || typeof data !== 'object' || !data.tool_name) {
+      debugLog('INVALID_DATA', '!tool_name');
       return exitQuietly();
     }
 
@@ -104,11 +135,15 @@ async function main() {
       systemMessage: formatted,
     };
 
-    process.stdout.write(JSON.stringify(hookOutput));
+    const outputStr = JSON.stringify(hookOutput);
+    debugLog('STDOUT_JSON', outputStr);
+    process.stdout.write(outputStr);
     // stderr にも書く（デバッグ用。デスクトップ版UIには出ないがログには残る）
     process.stderr.write(formatted + '\n');
+    debugLog('END', 'exit 0');
     process.exit(0);
-  } catch {
+  } catch (e) {
+    debugLog('UNEXPECTED_ERROR', String(e && e.stack || e));
     // 予期しないエラーも静かに exit 0（フックがツール実行をブロックしないため）
     process.exit(0);
   }
