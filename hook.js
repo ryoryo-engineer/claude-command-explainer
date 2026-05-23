@@ -1,14 +1,17 @@
 #!/usr/bin/env node
 // hook.js - Claude Code PreToolUse フックのエントリーポイント
 // stdin から JSON を受け取り、stdout に hook 用 JSON を返す。
-//   - hookSpecificOutput.permissionDecisionReason: 許可ダイアログにも表示される説明
-//   - hookSpecificOutput.additionalContext: Claude に渡される追加コンテキスト
-//   - systemMessage: ユーザーへのフォールバック通知
-// 既存の許可フローを邪魔しないため permissionDecision は出力しない。
+//   - hookSpecificOutput.permissionDecision: 'ask' を返して許可ダイアログを発火（自動承認モード時は省略）
+//   - hookSpecificOutput.permissionDecisionReason: 許可ダイアログに表示される日本語説明
+//   - hookSpecificOutput.additionalContext: Claude モデルに渡される追加コンテキスト
+//   - systemMessage: ユーザーへの通知としてチャット領域に表示
+//
+// デバッグ: 環境変数 CCE_DEBUG_LOG=<path> を設定するとログを書き出す。
+// LLM タイムアウト: 環境変数 CCE_LLM_TIMEOUT_MS=<ミリ秒> で claude -p のタイムアウト指定。
+// カラー無効化: 環境変数 NO_COLOR または CCE_NO_COLOR=1 でカラー出力を無効化。
 
 const fs = require('node:fs');
 const path = require('node:path');
-const os = require('node:os');
 const { readStdin } = require('./lib/io');
 const { explain } = require('./lib/dictionary');
 const { askLlm } = require('./lib/claude-llm');
@@ -17,17 +20,16 @@ const { getDanger } = require('./lib/danger');
 const { format } = require('./lib/formatter');
 
 /**
- * デバッグログをファイルに追記する
- * - 環境変数 CCE_DEBUG_LOG=off で無効化
- * - 環境変数 CCE_DEBUG_LOG=<path> で出力先を指定
- * - 未指定なら ~/.claude/command-explainer-debug.log に出力（デバッグ期間のデフォルト）
+ * デバッグログをファイルに追記する（オプトイン方式）。
+ * - 環境変数 CCE_DEBUG_LOG が未設定なら何もしない（デフォルト無効）
+ * - CCE_DEBUG_LOG=<path> で指定パスにログを書き出す
+ *   例: CCE_DEBUG_LOG=C:\\Users\\owner\\hook.log
  * @param {string} label
  * @param {any} payload
  */
 function debugLog(label, payload) {
-  const envVar = process.env.CCE_DEBUG_LOG;
-  if (envVar === 'off') return;
-  const logPath = envVar || path.join(os.homedir(), '.claude', 'command-explainer-debug.log');
+  const logPath = process.env.CCE_DEBUG_LOG;
+  if (!logPath || logPath === 'off') return;
   try {
     const line = `[${new Date().toISOString()}] ${label}: ${
       typeof payload === 'string' ? payload : JSON.stringify(payload)
