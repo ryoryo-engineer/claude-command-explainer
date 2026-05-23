@@ -1,6 +1,10 @@
 #!/usr/bin/env node
 // hook.js - Claude Code PreToolUse フックのエントリーポイント
-// stdin から JSON を受け取り、stderr に整形済み日本語説明を出力する
+// stdin から JSON を受け取り、stdout に hook 用 JSON を返す。
+//   - hookSpecificOutput.permissionDecisionReason: 許可ダイアログにも表示される説明
+//   - hookSpecificOutput.additionalContext: Claude に渡される追加コンテキスト
+//   - systemMessage: ユーザーへのフォールバック通知
+// 既存の許可フローを邪魔しないため permissionDecision は出力しない。
 
 const { readStdin } = require('./lib/io');
 const { explain } = require('./lib/dictionary');
@@ -43,6 +47,13 @@ async function generateExplanation(toolName, toolInput) {
   return '不明なツール呼び出しです。許可する前に内容を確認してください。';
 }
 
+/**
+ * 静かに正常終了する（ツール実行をブロックしないため exit 0）
+ */
+function exitQuietly() {
+  process.exit(0);
+}
+
 async function main() {
   try {
     // stdin から JSON を読み込む
@@ -53,19 +64,19 @@ async function main() {
     try {
       data = JSON.parse(raw);
     } catch {
-      process.exit(0);
+      return exitQuietly();
     }
 
     // 不正なデータは静かに exit 0
     if (!data || typeof data !== 'object' || !data.tool_name) {
-      process.exit(0);
+      return exitQuietly();
     }
 
     const toolName = data.tool_name;
     const toolInput = data.tool_input || {};
 
     // キャッシュを確認する
-    let cached = cacheGet(toolName, toolInput);
+    const cached = cacheGet(toolName, toolInput);
     let description;
     if (cached && cached.description) {
       description = cached.description;
@@ -75,10 +86,27 @@ async function main() {
       cacheSet(toolName, toolInput, { description });
     }
 
-    // 危険度を判定して整形済み出力を stderr に書く
+    // 危険度を判定して整形した日本語説明を組み立てる
     const danger = getDanger(toolName, toolInput);
-    const output = format({ description, danger });
-    process.stderr.write(output + '\n');
+    const formatted = format({ description, danger });
+
+    // Claude Code に対して JSON を返す
+    //   - permissionDecisionReason: ユーザーが許可ダイアログを見るときに表示される
+    //   - additionalContext: Claude に渡される（モデルが文脈を理解するのに役立つ）
+    //   - systemMessage: ユーザーへの通知としてチャット領域に表示される
+    // permissionDecision は省略 → 既存の許可フロー（matcher の allow/ask/deny ルール）に従う
+    const hookOutput = {
+      hookSpecificOutput: {
+        hookEventName: 'PreToolUse',
+        permissionDecisionReason: formatted,
+        additionalContext: `日本語説明: ${description}\n危険度: ${danger.level}`,
+      },
+      systemMessage: formatted,
+    };
+
+    process.stdout.write(JSON.stringify(hookOutput));
+    // stderr にも書く（デバッグ用。デスクトップ版UIには出ないがログには残る）
+    process.stderr.write(formatted + '\n');
     process.exit(0);
   } catch {
     // 予期しないエラーも静かに exit 0（フックがツール実行をブロックしないため）

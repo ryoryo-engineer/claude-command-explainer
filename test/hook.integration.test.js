@@ -26,39 +26,81 @@ function runHook(input) {
   });
 }
 
-test('辞書ヒットケース：rm -rf node_modules で日本語説明が出る', async () => {
+function parseHookOutput(out) {
+  // hook の stdout は JSON
+  return JSON.parse(out);
+}
+
+test('辞書ヒットケース：rm -rf node_modules で日本語説明が JSON 出力に含まれる', async () => {
   fs.rmSync(TMP_CACHE, { force: true });
-  const { code, err } = await runHook({
+  const { code, out, err } = await runHook({
     tool_name: 'Bash',
     tool_input: { command: 'rm -rf node_modules' },
   });
   assert.strictEqual(code, 0);
+
+  const parsed = parseHookOutput(out);
+  const reason = parsed.hookSpecificOutput.permissionDecisionReason;
+  const sysMsg = parsed.systemMessage;
+  // permissionDecisionReason と systemMessage は同じ整形済みテキスト
+  assert.strictEqual(reason, sysMsg);
+  assert.ok(reason.includes('node_modules'));
+  assert.ok(reason.includes('削除'));
+  assert.ok(reason.includes('⚠️'));
+  assert.ok(reason.includes('元に戻せません'));
+
+  // additionalContext には危険度メタも含む
+  assert.ok(parsed.hookSpecificOutput.additionalContext.includes('destructive'));
+
+  // stderr 側にも整形済み出力が出る（デバッグ用）
   assert.ok(err.includes('node_modules'));
-  assert.ok(err.includes('削除'));
-  assert.ok(err.includes('⚠️'));
-  assert.ok(err.includes('元に戻せません'));
+});
+
+test('hookEventName は PreToolUse である', async () => {
+  fs.rmSync(TMP_CACHE, { force: true });
+  const { out } = await runHook({
+    tool_name: 'Bash',
+    tool_input: { command: 'ls' },
+  });
+  const parsed = parseHookOutput(out);
+  assert.strictEqual(parsed.hookSpecificOutput.hookEventName, 'PreToolUse');
+});
+
+test('permissionDecision は出力しない（既存の許可フローに従う）', async () => {
+  fs.rmSync(TMP_CACHE, { force: true });
+  const { out } = await runHook({
+    tool_name: 'Bash',
+    tool_input: { command: 'ls' },
+  });
+  const parsed = parseHookOutput(out);
+  // permissionDecision を出すと既存の許可ルールを上書きしてしまうので、出さない
+  assert.strictEqual(parsed.hookSpecificOutput.permissionDecision, undefined);
 });
 
 test('Edit ツールでファイルパスが説明に含まれる', async () => {
   fs.rmSync(TMP_CACHE, { force: true });
-  const { code, err } = await runHook({
+  const { code, out } = await runHook({
     tool_name: 'Edit',
     tool_input: { file_path: 'src/auth.ts', old_string: 'a', new_string: 'b' },
   });
   assert.strictEqual(code, 0);
-  assert.ok(err.includes('src/auth.ts'));
-  assert.ok(err.includes('編集'));
+  const parsed = parseHookOutput(out);
+  const reason = parsed.hookSpecificOutput.permissionDecisionReason;
+  assert.ok(reason.includes('src/auth.ts'));
+  assert.ok(reason.includes('編集'));
 });
 
 test('未知のツール + 未知のコマンド + claude無しでも exit 0', async () => {
   fs.rmSync(TMP_CACHE, { force: true });
-  const { code, err } = await runHook({
+  const { code, out } = await runHook({
     tool_name: 'MysteryTool',
     tool_input: { foo: 'bar' },
   });
   assert.strictEqual(code, 0);
+  const parsed = parseHookOutput(out);
+  const reason = parsed.hookSpecificOutput.permissionDecisionReason;
   // 「不明」表示が出る
-  assert.ok(err.includes('不明') || err.includes('Claude Code'));
+  assert.ok(reason.includes('不明') || reason.includes('Claude Code'));
 });
 
 test('JSON が壊れていても exit 0', async () => {
