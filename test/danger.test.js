@@ -35,6 +35,10 @@ test('TRUNCATE は destructive', () => {
   assert.strictEqual(getDanger('Bash', { command: 'mysql -e "TRUNCATE logs"' }).level, 'destructive');
 });
 
+test('DELETE FROM は destructive', () => {
+  assert.strictEqual(getDanger('Bash', { command: 'psql -c "DELETE FROM users"' }).level, 'destructive');
+});
+
 test('cd は safe', () => {
   assert.strictEqual(getDanger('Bash', { command: 'cd /home' }).level, 'safe');
 });

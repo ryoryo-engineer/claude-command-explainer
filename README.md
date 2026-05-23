@@ -110,7 +110,9 @@ Claude Code を再起動し、何か簡単な操作（例：`ls` を実行）を
 
 - Claude Code を完全に再起動してみてください
 - `settings.json` のパスが正しいか確認してください
-- `node /パス/hook.js < /dev/null` を実行してエラーが出ないか確認してください（exit 0 で何も出なければ正常）
+- 以下のコマンドでエラーが出ないか確認してください（exit 0 で何も出なければ正常）
+  - Mac/Linux: `node /パス/hook.js < /dev/null`
+  - Windows (PowerShell): `"" | node C:\パス\hook.js`
 
 ### claude コマンドがあるはずなのに辞書だけ使われる
 
