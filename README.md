@@ -33,7 +33,7 @@ Claude Code がコマンドを実行する前に、**何を・どのファイル
 ### 1. このリポジトリをクローン
 
 ```bash
-git clone https://github.com/<your-username>/claude-command-explainer.git
+git clone https://github.com/ryoryo-engineer/claude-command-explainer.git
 cd claude-command-explainer
 ```
 
