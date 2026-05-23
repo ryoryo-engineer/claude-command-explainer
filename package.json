@@ -1,0 +1,14 @@
+{
+  "name": "claude-command-explainer",
+  "version": "0.1.0",
+  "description": "Claude Code が何をしようとしているかを日本語で表示する PreToolUse hook",
+  "main": "hook.js",
+  "scripts": {
+    "test": "node --test test/"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "keywords": ["claude-code", "hook", "japanese", "non-engineer"]
+}
