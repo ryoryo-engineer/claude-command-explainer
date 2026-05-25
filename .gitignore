@@ -6,3 +6,6 @@ node_modules/
 
 # Claude Code のプロジェクトローカル設定（ユーザー個人の設定なのでコミットしない）
 .claude/
+
+# 開発時の設計書・実装計画（個人の開発資産として手元のみで保持）
+docs/superpowers/
