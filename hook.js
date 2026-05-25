@@ -23,7 +23,7 @@ const { format } = require('./lib/formatter');
  * デバッグログをファイルに追記する（オプトイン方式）。
  * - 環境変数 CCE_DEBUG_LOG が未設定なら何もしない（デフォルト無効）
  * - CCE_DEBUG_LOG=<path> で指定パスにログを書き出す
- *   例: CCE_DEBUG_LOG=C:\\Users\\owner\\hook.log
+ *   例: CCE_DEBUG_LOG=/tmp/hook.log  または  CCE_DEBUG_LOG=%TEMP%\\hook.log
  * @param {string} label
  * @param {any} payload
  */

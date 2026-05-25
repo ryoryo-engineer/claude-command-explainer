@@ -4,7 +4,7 @@
   "description": "Claude Code が何をしようとしているかを日本語で表示する PreToolUse hook",
   "main": "hook.js",
   "scripts": {
-    "test": "node --test test/"
+    "test": "node --test test/*.test.js"
   },
   "engines": {
     "node": ">=18"
